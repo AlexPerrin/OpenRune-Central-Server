@@ -55,3 +55,4 @@ admin-web/dist/
 .DS_Store
 central-config.properties
 __pycache__/
+!tools/build/

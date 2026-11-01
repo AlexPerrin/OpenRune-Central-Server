@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tools/track.sh <verb> <slug> [arg]: the Central track (docs/ARCHITECTURE.md of osrs-harness). Env from hd: SLUG HEAD T
-# TCOMMIT BASE CLONE EVIDENCE BUILD HD_ROOT. build, gate, tests, evidence, commits and tree are tools/gate/gate.sh's (the code a
-# build or gate runs, its own files). Verbs:
+# TCOMMIT BASE CLONE EVIDENCE BUILD HD_ROOT. build and tree are tools/build/build.sh's (the code a build runs,
+# keyed alone); gate, tests, evidence and commits tools/gate/gate.sh's (the code a gate runs). Verbs:
 #   up [N]              the server's base (upstream main) with this Central built in, through the server track's build and up
 #                       (SERVER_TRACK: its script): an old world against this Central, N desktops logged in
 #   down                stops what up started (the server track's down)
@@ -21,11 +21,11 @@ case $self in "$root"/state/tools/*) ;; *)
   [ -d "$c" ] || { d=$root/state/tools/.$k.$$; rm -rf "$d"; mkdir -p "$d/tools"; cp -a "$self/." "$d/tools/"; mv -T "$d" "$c" 2>/dev/null || rm -rf "$d"; }
   TOOLS_SRC=$self TOOLS_ROOT=$c exec bash "$c/tools/track.sh" "$@" ;;
 esac
-case ${1:-} in build|gate|tests|evidence|commits|tree) exec "$self/gate/gate.sh" "$@" ;; esac
+case ${1:-} in build|tree) exec "$self/build/build.sh" "$@" ;; gate|tests|evidence|commits) exec "$self/gate/gate.sh" "$@" ;; esac
 state=$root/state/$slug; mkdir -p "$state"
 server_track=${SERVER_TRACK:-$HOME/src/OpenRune-Server/.worktrees/harness/tools/track.sh}
 up() {
-  n=$arg; tc=$("$self/gate/gate.sh" tree "$slug" | cut -d" " -f1)   # this change's Central commit (the dev's working copy snapshotted)
+  n=$arg; tc=$("$self/build/build.sh" tree "$slug" | cut -d" " -f1)   # this change's Central commit (the dev's working copy snapshotted)
   local srv s key rc=0; srv=$(dirname "$server_track"); s=$(git -C "$srv" rev-parse "origin/HEAD^{commit}"); key=$(git -C "$srv" rev-parse "$s^{tree}")-c${tc:0:12}
   server() { env -u CLONE -u BUILD -u EVIDENCE -u HEAD -u BASE -u TCOMMIT HD_ROOT="$root" CENTRAL="$repo:$tc" T="$key" "$server_track" "$@"; }
   cp "$state/build.json" "$state/central-build.json" 2>/dev/null || true   # the server build records into the same state dir

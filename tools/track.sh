@@ -20,7 +20,8 @@ state=$root/state/$slug; mkdir -p "$state"
 dev=$repo/.worktrees/$slug; copy=$repo/.worktrees/$slug-build
 server_track=${SERVER_TRACK:-$HOME/src/OpenRune-Server/.worktrees/harness/tools/track.sh}
 modules="central-common central-worldlink central-app"   # what dev.or2 publishes and the server includes; the admin web is not built
-record() { python3 -c 'import json,sys;print(json.dumps({"T":sys.argv[1],"ok":sys.argv[2]=="true","detail":sys.stdin.read()[-2000:]}))' "$T" "$1" > "$state/$2.json"; }
+atomic() { cat > "$1.$$.tmp"; if [ -s "$1.$$.tmp" ]; then mv -f "$1.$$.tmp" "$1"; else rm -f "$1.$$.tmp"; return 1; fi; }   # a state record whole or not at all: hd reads it at any moment
+record() { python3 -c 'import json,sys;print(json.dumps({"T":sys.argv[1],"ok":sys.argv[2]=="true","detail":sys.stdin.read()[-2000:]}))' "$T" "$1" | atomic "$state/$2.json"; }
 tested="central-worldlink central-app"   # shortcut: central-common's tests do not compile on upstream main (Rights.MODERATOR is gone); add it back when they do
 gradle() {  # gradle <dir> <task> [modules]: that task of each module, in container build-<slug> as uid 1000 with the change's Gradle volume
   local tasks=() m; for m in ${3:-$modules}; do tasks+=(":$m:$2"); done

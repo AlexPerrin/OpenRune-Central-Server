@@ -2,6 +2,9 @@
 # tools/track.sh <verb> <slug> [arg]: the Central track (docs/ARCHITECTURE.md of osrs-harness). Env from hd: SLUG HEAD T
 # TCOMMIT BASE CLONE EVIDENCE BUILD HD_ROOT. Verbs:
 #   build [TCOMMIT]     Gradle assemble of T's published modules in the build copy (a dev: the working copy snapshotted, T from `hd tree`); cached by T
+#   up [N]              the server's base (upstream main) with this Central built in, through the server track's build and up
+#                       (SERVER_TRACK: its script): an old world against this Central, N desktops logged in
+#   down                stops what up started (the server track's down)
 #   gate TCOMMIT        every check: and gate: row of the contract from the build copy (`hd rows`)
 #   tests               the unit tests of the tested modules in BUILD (a gate row)
 #   evidence            pr-title.txt, pr-body.md, pr-comment.md present and non-empty (a check row)
@@ -15,6 +18,7 @@ root=${HD_ROOT:-$HOME/osrs-harness}
 [ -f "$root/harness/changes/$slug.md" ] || { echo "no change \"$slug\": tools/track.sh <verb> <slug> [arg]" >&2; exit 2; }
 state=$root/state/$slug; mkdir -p "$state"
 dev=$repo/.worktrees/$slug; copy=$repo/.worktrees/$slug-build
+server_track=${SERVER_TRACK:-$HOME/src/OpenRune-Server/.worktrees/harness/tools/track.sh}
 modules="central-common central-worldlink central-app"   # what dev.or2 publishes and the server includes; the admin web is not built
 record() { python3 -c 'import json,sys;print(json.dumps({"T":sys.argv[1],"ok":sys.argv[2]=="true","detail":sys.stdin.read()[-2000:]}))' "$T" "$1" > "$state/$2.json"; }
 tested="central-worldlink central-app"   # shortcut: central-common's tests do not compile on upstream main (Rights.MODERATOR is gone); add it back when they do
@@ -40,6 +44,16 @@ build() {
   gradle "$copy" assemble > "$log" 2>&1 || { record false build < "$log"; echo "build failed: $log"; return 1; }
   record true build < "$log"; echo "built $T"
 }
+up() {
+  n=$arg; arg=; tree   # this change's Central commit (the dev's working copy snapshotted)
+  local srv s key rc=0; srv=$(dirname "$server_track"); s=$(git -C "$srv" rev-parse "origin/HEAD^{commit}"); key=$(git -C "$srv" rev-parse "$s^{tree}")-c${tc:0:12}
+  server() { env -u CLONE -u BUILD -u EVIDENCE -u HEAD -u BASE -u TCOMMIT HD_ROOT="$root" CENTRAL="$repo:$tc" T="$key" "$server_track" "$@"; }
+  cp "$state/build.json" "$state/central-build.json" 2>/dev/null || true   # the server build records into the same state dir
+  server build "$slug" "$s" || rc=$?
+  mv -f "$state/central-build.json" "$state/build.json" 2>/dev/null || true
+  [ "$rc" = 0 ] && server up "$slug" $n
+}
+down() { env -u CLONE HD_ROOT="$root" "$server_track" down "$slug"; }
 gate() {
   tc=$arg; build; git -C "$copy" reset -q --hard "$tc" && git -C "$copy" clean -fdq
   if out=$(HD_ROOT=$root python3 "$root/hd.py" rows "$slug" "$tc" "$copy" 2>&1); then record true gate <<< "$out"; else record false gate <<< "$out"; fi
@@ -60,4 +74,4 @@ commits() {
 }
 log() { grep -hE "${arg:-.}" "$state"/build-*.log "$state/test.log" 2>/dev/null | tail -200 || true; }
 
-case $verb in build|gate|tests|evidence|commits|log) "$verb" ;; *) echo "verbs: build gate tests evidence commits log" >&2; exit 2 ;; esac
+case $verb in build|up|down|gate|tests|evidence|commits|log) "$verb" ;; *) echo "verbs: build up down gate tests evidence commits log" >&2; exit 2 ;; esac

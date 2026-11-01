@@ -26,13 +26,15 @@ run; the contract records the blob shas of those that exist)
 
 ## The dev
 Your clone `~/src/OpenRune-Central-Server/.worktrees/<slug>` on `dev/<slug>`. Commit; `tools/track.sh build <slug>`
-builds the published modules of T in the build copy; `tools/track.sh log <slug> <pattern>` reads its log. Prove the
-change end to end through the server change that depends on it (its `up` runs the server with this Central built in).
+builds the published modules of T in the build copy; `tools/track.sh log <slug> <pattern>` reads its log;
+`tools/track.sh up <slug> [N]` runs the server's base (upstream `main`) with this Central built in, N desktops logged in
+(an old world against this Central), `down` stops it. A row proves the change through its own build and its
+dependencies only; a proof that needs a server change depending on it (one that uses a new op) is that change's row.
 Write `pr-title.txt`, `pr-body.md`, `pr-comment.md` (names the head). Push `dev/<slug>` to `fork`, then `hd handover
 <slug>`. `hd ask <slug> "..."` when a decision is not yours; `hd show <slug>` first, always.
 
 ## The reviewer
-Never writes the code it checks. Judges every contract row from the same build; a text-only failure is fixed in the
+Never writes the code it checks. Judges every contract row from the same build (`up`, then `down` before the hand-back); a text-only failure is fixed in the
 evidence dir and the row marked pass.
 
 ## Never

@@ -83,7 +83,7 @@ class WorldRepository(
     }
 
     fun hasLoginWhitelistEntries(worldId: Int): Boolean {
-        val sql = OpenRuneSql.text("game/world/login_whitelist_exists.sql")
+        val sql = OpenRuneSql.text("game/world/login_whitelist_any.sql")
         return dataSource.connection.use { conn ->
             conn.prepareStatement(sql).use { ps ->
                 ps.setInt(1, worldId)
@@ -93,14 +93,9 @@ class WorldRepository(
     }
 
     fun isLoginWhitelisted(worldId: Int, loginUsername: String): Boolean {
+        val sql = OpenRuneSql.text("game/world/login_whitelist_exists.sql")
         return dataSource.connection.use { conn ->
-            conn.prepareStatement(
-                """
-                SELECT 1 FROM world_login_whitelist
-                WHERE world_id = ? AND LOWER(login_username) = LOWER(?)
-                LIMIT 1
-                """.trimIndent(),
-            ).use { ps ->
+            conn.prepareStatement(sql).use { ps ->
                 ps.setInt(1, worldId)
                 ps.setString(2, loginUsername)
                 ps.executeQuery().use { rs -> rs.next() }

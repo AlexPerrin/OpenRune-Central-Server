@@ -38,6 +38,7 @@ class WorldLinkHandler(
             return when (input.opcode) {
                 WorldOpcodes.OP_WORLD_HELLO -> helloHandler.handle(connection, input)
                 WorldOpcodes.OP_LOGIN -> loginHandler.handle(connection, input)
+                WorldOpcodes.OP_TOKEN_LOGIN -> loginHandler.handleToken(connection, input)
                 WorldOpcodes.OP_PUSH_SUBSCRIBE -> {
                     val result = pushSubscribeHandler.handle(connection, input)
                     if (connection.subscribedForPush) {

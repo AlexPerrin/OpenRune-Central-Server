@@ -55,13 +55,13 @@ class SessionService(
     fun login(
         connection: WorldConnection,
         username: String,
-        password: String,
+        password: String?,
         loginCharacterId: Int?,
     ): Result<LoginResult> {
         val loginStartedAt = System.nanoTime()
         var verifyMs = 0L
         var sessionTxMs = 0L
-        if (password.length > 256) {
+        if (password != null && password.length > 256) {
             return Result.failure(LoginException(WorldOpcodes.LOGIN_FAIL_BAD_FRAME))
         }
         val roots = badWordRoots()
@@ -89,7 +89,7 @@ class SessionService(
             if (ck.isNotEmpty() && accountRepository.collisionKeyTaken(ck)) {
                 return Result.failure(LoginException(WorldOpcodes.LOGIN_FAIL_INVALID))
             }
-            val hash = passwordHasher.hash(password)
+            val hash = password?.let { passwordHasher.hash(it) } ?: ""
             val inserted = accountRepository.insertIfAbsent(canonical, hash, registerNow)
             account = accountRepository.findByUsername(loginKey)
             registeredThisLogin = inserted && account != null
@@ -98,7 +98,7 @@ class SessionService(
         val passwordOk =
             when {
                 account == null -> false
-                registeredThisLogin -> true
+                registeredThisLogin || password == null -> true
                 else -> passwordHasher.verify(account.passwordHash, password)
             }
         verifyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - verifyStart)
@@ -164,7 +164,9 @@ class SessionService(
         }
         sessionRepository.invalidateCache()
         worldListCache?.rebuildAsync()
-        maybeScheduleDevPasswordRehash(connection, resolvedAccount.id, resolvedAccount.passwordHash, password)
+        if (password != null) {
+            maybeScheduleDevPasswordRehash(connection, resolvedAccount.id, resolvedAccount.passwordHash, password)
+        }
         val rights = resolvedAccount.rights
         logLoginTiming(username, loginStartedAt, verifyMs, sessionTxMs, "ok")
         return Result.success(LoginResult(token, resolvedAccount.id, rights, connection.realmDevMode))

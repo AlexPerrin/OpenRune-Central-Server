@@ -41,7 +41,7 @@ evidence dir and the row marked pass.
 Push any ref but yours; open or edit PRs; connect to Jagex; stop a process you did not start.
 
 ## Seed rows
-Rows the contract starts from (a row tagged `upstream` judges the upstream PR and seeds only a change that opens one; `check:` rows run with SLUG, HEAD, T, BASE, CLONE, BUILD, EVIDENCE in the env).
+Rows the contract starts from (a row tagged `upstream` judges the upstream PR and seeds only a change that opens one; `check:` rows run with SLUG, HEAD, T, TCOMMIT, BASE, CLONE, BUILD, EVIDENCE in the env).
 - claims | every PR claim, file, test name and ticked box is true of the exact head | judge: pr-text
 - no-deferral | no Not-done list, no unticked item, no open ask; every reported defect fixed in this PR | judge: pr-text | upstream
 - net-change | on an existing PR, pr-comment.md covers only the commits since the PR's live head | judge: pr-text | upstream

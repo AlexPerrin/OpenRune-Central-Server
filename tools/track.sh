@@ -9,7 +9,7 @@
 # A server change that depends on a central change builds that Central in (the server track's CENTRAL); nothing here deploys.
 set -euo pipefail
 verb=$1; slug=${2:-${SLUG:-}}; arg=${3:-}   # a contract row passes no slug: hd exports SLUG
-repo=${CLONE:-$HOME/src/OpenRune-Central-Server}
+repo=$(dirname "$(git -C "${CLONE:-$HOME/src/OpenRune-Central-Server}" rev-parse --path-format=absolute --git-common-dir)")   # the main checkout, also when CLONE names a worktree of it (a brief's Clone)
 self=$(cd "$(dirname "$0")" && pwd)
 root=${HD_ROOT:-$HOME/osrs-harness}
 [ -f "$root/harness/changes/$slug.md" ] || { echo "no change \"$slug\": tools/track.sh <verb> <slug> [arg]" >&2; exit 2; }

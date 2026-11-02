@@ -6,7 +6,7 @@
 #   tests               the unit tests of the tested modules in BUILD (a gate row)
 #   evidence            pr-title.txt, pr-body.md, pr-comment.md present and non-empty (a check row)
 #   commits             subjects after BASE start with feat: or fix:; no Claude-Session trailer (a check row)
-. "$(dirname "$0")/../build/build.sh"   # verb slug arg self(tools/build) repo root state dev copy modules tested atomic record gradle tree build
+. "$(dirname "$0")/../build/build.sh"   # verb slug arg self(tools/build) repo root state dev copy modules tested atomic record hosted gradle tree build
 gate() {
   tc=$arg; build; git -C "$copy" reset -q --hard "$tc" && git -C "$copy" clean -fdq
   out=$(HD_ROOT=$root python3 "$root/hd.py" rows "$slug" "$tc" "$copy" 2>&1) && rc=0 || rc=$?
@@ -16,7 +16,7 @@ gate() {
 }
 tests() {
   log=$state/test.log
-  gradle "${BUILD:?the build copy}" test "$tested" > "$log" 2>&1 || { grep -E 'FAILED|Test.*>' "$log" | tail -20; echo "tests fail: $log"; return 1; }
+  gradle "$log" "${BUILD:?the build copy}" test "$tested" || { grep -E 'FAILED|Test.*>' "$log" | tail -20; echo "tests fail: $log"; return 1; }
   echo "tests pass"
 }
 evidence() {

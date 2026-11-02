@@ -16,10 +16,18 @@ modules="central-common central-worldlink central-app"   # what dev.or2 publishe
 atomic() { cat > "$1.$$.tmp"; if [ -s "$1.$$.tmp" ]; then mv -f "$1.$$.tmp" "$1"; else rm -f "$1.$$.tmp"; return 1; fi; }   # a state record whole or not at all: hd reads it at any moment
 record() { python3 -c 'import json,sys;print(json.dumps({"T":sys.argv[1],"ok":sys.argv[2]=="true","detail":sys.stdin.read()[-2000:]}))' "$T" "$1" | atomic "$state/$2.json"; }
 tested="central-worldlink central-app"   # shortcut: central-common's tests do not compile on upstream main (Rights.MODERATOR is gone); add it back when they do
-gradle() {  # gradle <dir> <task> [modules]: that task of each module, in container build-<slug> as uid 1000 with the change's Gradle volume
-  local tasks=() m; for m in ${3:-$modules}; do tasks+=(":$m:$2"); done
+fault='cannot allocate memory|no space left on device|Cannot connect to the Docker daemon|error during connect|is already in use by container'   # the host refusing the step (memory, disk, the daemon, a container a killed run left), never the tree
+ooms() { dmesg 2>/dev/null | grep -c '\] Out of memory: Killed process' || true; }   # the host OOM killer's kills so far (a container's own --memory limit logs 'Memory cgroup out of memory')
+hosted() {  # hosted <log> <command...>: the command, its output appended to log; failed for the host's cause, not the tree's, it exits 75: no result, the pass runs it again
+  local log=$1 n rc=0 why; shift; n=$(ooms); "$@" >> "$log" 2>&1 || rc=$?
+  [ $rc != 0 ] || return 0
+  why=$(grep -m1 -oiE "$fault" "$log") || { [ "$rc" = 137 ] && [ "$(ooms)" -gt "$n" ] && why="killed by the host's OOM killer"; } || return $rc
+  echo "the host's fault, not the tree's ($why): no result"; exit 75
+}
+gradle() {  # gradle <log> <dir> <task> [modules]: that task of each module, in container build-<slug> as uid 1000 with the change's Gradle volume, once the host has its room (`hd room`), its output in log (emptied first)
+  local log=$1 tasks=() m; shift; : > "$log"; for m in ${3:-$modules}; do tasks+=(":$m:$2"); done
   docker run --rm -v "gradle-$slug:/gradle" eclipse-temurin:21 chown 1000:1000 /gradle   # docker makes a new volume root's
-  docker run --rm --name "build-$slug" --cpus=4 --memory=4g -u 1000:1000 -e HOME=/gradle/home -e GRADLE_USER_HOME=/gradle \
+  hosted "$log" python3 "$root/hd.py" room docker run --init --rm --name "build-$slug" --cpus=4 --memory=4g -u 1000:1000 -e HOME=/gradle/home -e GRADLE_USER_HOME=/gradle \
     -v "gradle-$slug:/gradle" -v "$repo/.git:$repo/.git:ro" -v "$1:$1" -w "$1" eclipse-temurin:21 \
     bash -c 'mkdir -p "$HOME"; bash ./gradlew --console=plain --no-daemon "$@"' _ "${tasks[@]}"
 }
@@ -35,7 +43,7 @@ build() {
   if python3 -c 'import json,sys;b=json.load(open(sys.argv[1]));sys.exit(not (b["ok"] and b["T"]==sys.argv[2]))' "$state/build.json" "$T" 2>/dev/null; then echo "cached $T"; return; fi
   if [ -d "$copy" ]; then git -C "$copy" reset -q --hard "$tc" && git -C "$copy" clean -fdq; else git -C "$repo" worktree add -q --detach "$copy" "$tc"; fi
   log=$state/build-$T.log
-  gradle "$copy" assemble > "$log" 2>&1 || { record false build < "$log"; echo "build failed: $log"; return 1; }
+  gradle "$log" "$copy" assemble || { record false build < "$log"; echo "build failed: $log"; return 1; }
   record true build < "$log"; echo "built $T"
 }
 [ "${BASH_SOURCE[0]}" = "$0" ] || return 0   # sourced by gate.sh: its functions alone

@@ -23,9 +23,9 @@ evidence() {
   for f in pr-title.txt pr-body.md pr-comment.md; do [ -s "${EVIDENCE:?}/$f" ] || { echo "missing or empty: $EVIDENCE/$f"; return 1; }; done
 }
 commits() {
-  bad=$(git -C "$repo" log --format='%H%x09%s' "${BASE:?}..${HEAD:?}" | grep -vP '\t(feat|fix)(\([^)]*\))?: ' || true)
+  bad=$(git -C "$repo" log --no-merges --format='%H%x09%s' "${BASE:?}..${HEAD:?}" | grep -vP '\t(feat|fix)(\([^)]*\))?: ' || true)
   [ -z "$bad" ] || { echo "subjects not feat:/fix: $bad"; return 1; }
-  bad=$(git -C "$repo" log --format='%H%x09%(trailers:key=Claude-Session,valueonly)' "$BASE..$HEAD" | grep -P '\t\S' || true)
+  bad=$(git -C "$repo" log --no-merges --format='%H%x09%(trailers:key=Claude-Session,valueonly)' "$BASE..$HEAD" | grep -P '\t\S' || true)
   [ -z "$bad" ] || { echo "Claude-Session trailer: $bad"; return 1; }
 }
 

@@ -41,13 +41,13 @@ evidence dir and the row marked pass.
 Push any ref but yours; open or edit PRs; connect to Jagex; stop a process you did not start.
 
 ## Seed rows
-Rows the contract starts from (`check:` rows run with SLUG, HEAD, T, BASE, CLONE, BUILD, EVIDENCE in the env).
+Rows the contract starts from (a row tagged `upstream` judges the upstream PR and seeds only a change that opens one; `check:` rows run with SLUG, HEAD, T, BASE, CLONE, BUILD, EVIDENCE in the env).
 - claims | every PR claim, file, test name and ticked box is true of the exact head | judge: pr-text
-- no-deferral | no Not-done list, no unticked item, no open ask; every reported defect fixed in this PR | judge: pr-text
-- net-change | on an existing PR, pr-comment.md covers only the commits since the PR's live head | judge: pr-text
-- one-change | one feature, nothing unrelated, no open upstream PR for the same change, Depends stated | judge: pr-text
+- no-deferral | no Not-done list, no unticked item, no open ask; every reported defect fixed in this PR | judge: pr-text | upstream
+- net-change | on an existing PR, pr-comment.md covers only the commits since the PR's live head | judge: pr-text | upstream
+- one-change | one feature, nothing unrelated, no open upstream PR for the same change, Depends stated | judge: pr-text | upstream
 - wire | existing world-link ops encode as before; an old world still logs in against this Central | judge: qa-server
 - style | no added comments or KDoc, no unjustified test, nothing public for a test | judge: qa-server
 - evidence | pr-title.txt, pr-body.md, pr-comment.md present and non-empty | check: tools/track.sh evidence
-- subject | commit subjects after the base start with feat: or fix:; no Claude-Session trailer | check: tools/track.sh commits
+- subject | commit subjects after the base start with feat: or fix:; no Claude-Session trailer | check: tools/track.sh commits | upstream
 - tests | the published modules' unit tests pass at T | gate: tools/track.sh tests

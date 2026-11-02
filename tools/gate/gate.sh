@@ -9,7 +9,9 @@
 . "$(dirname "$0")/../build/build.sh"   # verb slug arg self(tools/build) repo root state dev copy modules tested atomic record gradle tree build
 gate() {
   tc=$arg; build; git -C "$copy" reset -q --hard "$tc" && git -C "$copy" clean -fdq
-  if out=$(HD_ROOT=$root python3 "$root/hd.py" rows "$slug" "$tc" "$copy" 2>&1); then ok=true; else ok=false; fi
+  out=$(HD_ROOT=$root python3 "$root/hd.py" rows "$slug" "$tc" "$copy" 2>&1) && rc=0 || rc=$?
+  [ $rc != 75 ] || { echo "$out"; exit 75; }   # a row held (its source down): no result, hd starts the gate again
+  ok=$([ $rc = 0 ] && echo true || echo false)
   T=${G:-$T}; record "$ok" gate <<< "$out"
 }
 tests() {

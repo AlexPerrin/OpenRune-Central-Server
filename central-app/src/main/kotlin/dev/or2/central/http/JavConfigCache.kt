@@ -32,7 +32,7 @@ class JavConfigCache(
         val rev = config.javConfig.revision
         val url = String.format(config.javConfig.remoteUrlTemplate, rev)
         val uri = URI.create(url)
-        val remote = if (uri.scheme == "file") Files.readString(Path.of(uri)) else fetchRemote(url)
+        val remote = if (uri.scheme == "file") String(Files.readAllBytes(Path.of(uri)), StandardCharsets.UTF_8) else fetchRemote(url)
         return mergeProps(remote, config.javConfig.configProps)
     }
 

@@ -39,6 +39,8 @@ openrune:
   javConfig:
     revision: 238
     remoteUrlTemplate: https://client.blurite.io/jav_local_%d.ws
+    # or a local file, served with no remote fetch: file:///path/to/jav_config.ws
+    # Or env: OPENRUNE_JAV_CONFIG_URL_TEMPLATE (also read by embedded Central)
     refreshMinutes: 15
     httpTimeoutSeconds: 20
     configProps:

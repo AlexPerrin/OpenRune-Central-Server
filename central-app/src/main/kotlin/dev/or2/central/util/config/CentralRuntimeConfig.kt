@@ -27,7 +27,9 @@ fun centralRuntimeConfigFromJdbc(
         "https://gist.githubusercontent.com/briankung/e085841a7a13fa4945a0cf482950436a/raw/326b4078db98541204e3d192d7cf84f63cd4c87a/bad_words.txt",
     badWordsRefreshMinutes: Int = 360,
     javConfigRevision: Int = 238,
-    javConfigRemoteUrlTemplate: String = "https://client.blurite.io/jav_local_%d.ws",
+    javConfigRemoteUrlTemplate: String =
+        System.getenv("OPENRUNE_JAV_CONFIG_URL_TEMPLATE")?.takeIf { it.isNotBlank() }
+            ?: "https://client.blurite.io/jav_local_%d.ws",
     javConfigProps: Map<String, String> = emptyMap(),
     javConfigRefreshMinutes: Int = 15,
     javConfigHttpTimeoutSeconds: Int = 20,

@@ -152,7 +152,7 @@ Point game worlds at this Central host for world-link auth. Central does not sta
 | `openrune.http.port` | `OPENRUNE_HTTP_PORT` | HTTP port |
 | `openrune.http.trustProxy` | `OPENRUNE_HTTP_TRUST_PROXY` | Trust `X-Forwarded-*` from proxy/tunnel |
 | `openrune.javConfig.revision` | `OPENRUNE_JAV_CONFIG_REVISION` | Remote jav revision |
-| `openrune.javConfig.remoteUrlTemplate` | `OPENRUNE_JAV_CONFIG_URL_TEMPLATE` | Download URL (`%d` = revision) |
+| `openrune.javConfig.remoteUrlTemplate` | `OPENRUNE_JAV_CONFIG_URL_TEMPLATE` | Download URL (`%d` = revision), or a `file:///` path served with no remote fetch; also read by embedded Central |
 | `openrune.javConfig.configProps` | `OPENRUNE_JAV_CONFIG_PROPS` | Jav config overrides (YAML map) |
 | `openrune.javConfig.refreshMinutes` | `OPENRUNE_JAV_CONFIG_REFRESH_MINUTES` | Jav cache refresh |
 | `openrune.javConfig.httpTimeoutSeconds` | `OPENRUNE_JAV_CONFIG_HTTP_TIMEOUT_SEC` | Jav fetch timeout |
@@ -182,7 +182,7 @@ Central serves **plain HTTP** locally. Public HTTPS is handled by Cloudflare or 
 Examples (adjust port to your deployment):
 
 - `GET /worldslist.ws`, `GET /worlds.js` — world list payloads
-- `GET /jav_config.ws` — proxied jav config with optional `javConfig.configProps` overrides
+- `GET /jav_config.ws` — proxied (or local `file:///`) jav config with optional `javConfig.configProps` overrides
 
 ## Admin website (`/admin`)
 

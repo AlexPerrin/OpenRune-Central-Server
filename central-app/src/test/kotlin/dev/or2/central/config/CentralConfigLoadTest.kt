@@ -148,4 +148,10 @@ class CentralConfigLoadTest {
         assertEquals("", config.database.host)
         assertEquals(8080, config.http.port)
     }
+
+    @Test
+    fun `the embedded sign-in and tls settings default when the environment names none`() {
+        assertEquals(SignInConfig(), CentralConfig.fromEnvironment<SignInConfig>())
+        assertEquals(TlsConfig(), CentralConfig.fromEnvironment<TlsConfig>())
+    }
 }

@@ -9,6 +9,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 
+private val SIGN_IN_PARAMS = listOf(11, 20, 22, 28)
+
 private fun io.ktor.server.application.ApplicationCall.allowBrowserRead() {
     response.headers.append(HttpHeaders.AccessControlAllowOrigin, "*")
 }
@@ -16,6 +18,7 @@ private fun io.ktor.server.application.ApplicationCall.allowBrowserRead() {
 fun Route.centralHttpRoutes(
     worldListCache: WorldListCache,
     javConfigCache: JavConfigCache,
+    signInParams: Boolean,
 ) {
     get("/worldslist.ws") {
         val bytes = worldListCache.snapshot()
@@ -33,7 +36,11 @@ fun Route.centralHttpRoutes(
 
     get("/jav_config.ws") {
         val body =
-            javConfigCache.snapshot()
+            javConfigCache.snapshot()?.let { remote ->
+                if (!signInParams) return@let remote
+                val base = call.publicBase()
+                JavConfigCache.mergeProps(remote, SIGN_IN_PARAMS.associate { "param=$it" to base })
+            }
                 ?: run {
                     call.allowBrowserRead()
                     call.respondText(

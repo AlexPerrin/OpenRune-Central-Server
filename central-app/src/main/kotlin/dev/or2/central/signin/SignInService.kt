@@ -1,5 +1,8 @@
 package dev.or2.central.signin
 
+import dev.or2.central.account.AccountNameAuthPolicy
+import dev.or2.central.account.AccountNameWorldLinkPrecheck
+import dev.or2.central.account.AccountNameWorldLinkPrecheckResult
 import dev.or2.central.auth.PasswordHasher
 import dev.or2.central.config.SignInConfig
 import dev.or2.central.db.repositories.AccountRepository
@@ -27,6 +30,7 @@ class SignInService(
     config: SignInConfig,
     private val accounts: AccountRepository,
     private val passwordHasher: PasswordHasher,
+    private val badWordRoots: () -> Set<String> = { emptySet() },
 ) {
     val devAccount: String = config.devAccount.trim()
     private val key = SecretKeySpec(Base64.getDecoder().decode(config.tokenSecret.trim()), "HmacSHA256")
@@ -44,8 +48,19 @@ class SignInService(
     )
 
     fun checkPassword(username: String, password: String): String? {
-        val account = accounts.findByUsername(username.trim()) ?: return null
-        return account.username.takeIf { passwordHasher.verify(account.passwordHash, password) }
+        if (password.isBlank() || password.length > 256) return null
+        val pre = AccountNameWorldLinkPrecheck.evaluateRawUsernameForLogin(username, badWordRoots())
+        val canonical = (pre as? AccountNameWorldLinkPrecheckResult.Ok)?.canonical ?: return null
+        val loginKey = canonical.lowercase()
+        var account = accounts.findByUsername(loginKey)
+        var registered = false
+        if (account == null) {
+            val ck = AccountNameAuthPolicy.collisionKey(canonical)
+            if (ck.isNotEmpty() && accounts.collisionKeyTaken(ck)) return null
+            registered = accounts.insertIfAbsent(canonical, passwordHasher.hash(password), System.currentTimeMillis())
+            account = accounts.findByUsername(loginKey) ?: return null
+        }
+        return account.username.takeIf { registered || passwordHasher.verify(account.passwordHash, password) }
     }
 
     fun issueCode(account: String, nonce: String?, challenge: String?): String {

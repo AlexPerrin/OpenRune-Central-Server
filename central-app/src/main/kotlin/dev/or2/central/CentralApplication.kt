@@ -189,7 +189,7 @@ object CentralApplication {
             single { CentralActivityLogRepository(get()) }
             single<CentralActivityLogPublisher> { DefaultCentralActivityLogPublisher(get()) }
             single { WorldKeyVerifier() }
-            single { SignInService(config.signIn, get(), get()) }
+            single { SignInService(config.signIn, get(), get(), badWordRoots = { get<BadWordIndex>().roots() }) }
             single { WorldListCache(get()) }
             single { JavConfigCache(config) }
             single { WorldConnectionRegistry() }

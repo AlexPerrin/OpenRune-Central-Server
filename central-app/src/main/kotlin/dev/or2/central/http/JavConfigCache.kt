@@ -6,6 +6,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
 import org.slf4j.LoggerFactory
@@ -29,7 +31,8 @@ class JavConfigCache(
     private fun fetchAndMerge(): String {
         val rev = config.javConfig.revision
         val url = String.format(config.javConfig.remoteUrlTemplate, rev)
-        val remote = fetchRemote(url)
+        val uri = URI.create(url)
+        val remote = if (uri.scheme == "file") String(Files.readAllBytes(Path.of(uri)), StandardCharsets.UTF_8) else fetchRemote(url)
         return mergeProps(remote, config.javConfig.configProps)
     }
 

@@ -17,25 +17,30 @@ import kotlin.test.assertTrue
 
 class SignInServiceTest {
     private val secret = Base64.getEncoder().encodeToString(ByteArray(32) { it.toByte() })
-    private var now = 1_800_000_000L
     private val accounts =
         AccountRepository(
             Proxy.newProxyInstance(javaClass.classLoader, arrayOf(DataSource::class.java)) { _, _, _ -> error("no database") } as DataSource,
         )
 
     private fun service(tokenSecret: String = secret) =
-        SignInService(SignInConfig(tokenSecret = tokenSecret), accounts, CompositePasswordHasher("bcrypt", 4)) { now }
+        SignInService(SignInConfig(tokenSecret = tokenSecret), accounts, CompositePasswordHasher("bcrypt", 4))
 
     private fun b64(bytes: ByteArray) = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
 
+    private fun hmac(body: String) =
+        b64(Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256")) }.doFinal(body.toByteArray()))
+
+    private fun epochSeconds() = System.currentTimeMillis() / 1000
+
     @Test
     fun `login token is the compact form the game verifies`() {
+        val before = epochSeconds()
         val token = service().mintLoginToken("abcdefghijkl")
         assertTrue(token.length <= 67)
         val body = token.substringBeforeLast('.')
-        assertEquals("abcdefghijkl.${now + 3600}", body)
-        val mac = Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(Base64.getDecoder().decode(secret), "HmacSHA256")) }
-        assertEquals(b64(mac.doFinal(body.toByteArray())), token.substringAfterLast('.'))
+        assertEquals("abcdefghijkl", body.substringBefore('.'))
+        assertTrue(body.substringAfter('.').toLong() - 3600 in before..epochSeconds())
+        assertEquals(hmac(body), token.substringAfterLast('.'))
     }
 
     @Test
@@ -62,9 +67,9 @@ class SignInServiceTest {
         val forged = service(Base64.getEncoder().encodeToString(ByteArray(32))).idToken("x", "client", SignedIn("tester", null))
         assertNull(signIn.openSession(forged))
         val parts = idToken.split('.')
-        val altered = parts[0] + "." + b64("""{"sub":"admin","exp":${now + 100}}""".toByteArray()) + "." + parts[2]
+        val altered = parts[0] + "." + b64("""{"sub":"admin","exp":${epochSeconds() + 100}}""".toByteArray()) + "." + parts[2]
         assertNull(signIn.openSession(altered))
-        now += 86_401
-        assertNull(signIn.openSession(idToken))
+        val expired = parts[0] + "." + b64("""{"sub":"tester","exp":${epochSeconds() - 1}}""".toByteArray())
+        assertNull(signIn.openSession(expired + "." + hmac(expired)))
     }
 }

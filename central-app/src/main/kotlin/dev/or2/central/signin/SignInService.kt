@@ -27,7 +27,6 @@ class SignInService(
     config: SignInConfig,
     private val accounts: AccountRepository,
     private val passwordHasher: PasswordHasher,
-    private val clock: () -> Long = { System.currentTimeMillis() / 1000 },
 ) {
     val devAccount: String = config.devAccount.trim()
     private val key = SecretKeySpec(Base64.getDecoder().decode(config.tokenSecret.trim()), "HmacSHA256")
@@ -50,14 +49,14 @@ class SignInService(
     }
 
     fun issueCode(account: String, nonce: String?, challenge: String?): String {
-        val now = clock()
+        val now = epochSeconds()
         codes.values.removeIf { now - it.issuedAt > CODE_TTL_SECONDS }
         return randomId().also { codes[it] = Code(account, nonce, challenge, now) }
     }
 
     fun redeemCode(code: String, verifier: String?): SignedIn? {
         val entry = codes.remove(code) ?: return null
-        if (clock() - entry.issuedAt > CODE_TTL_SECONDS) return null
+        if (epochSeconds() - entry.issuedAt > CODE_TTL_SECONDS) return null
         if (entry.challenge != null && (verifier == null || b64(sha256(verifier.toByteArray())) != entry.challenge)) return null
         return SignedIn(entry.account, entry.nonce)
     }
@@ -71,7 +70,7 @@ class SignInService(
     fun accessAccount(token: String): String? = accessTokens[token]
 
     fun idToken(issuer: String, audience: String, signedIn: SignedIn): String {
-        val now = clock()
+        val now = epochSeconds()
         val claims =
             buildJsonObject {
                 put("iss", issuer)
@@ -99,7 +98,7 @@ class SignInService(
     fun sessionAccount(sessionId: String): String? = sessions[sessionId]
 
     fun mintLoginToken(account: String): String {
-        val body = "$account.${clock() + LOGIN_TOKEN_TTL_SECONDS}"
+        val body = "$account.${epochSeconds() + LOGIN_TOKEN_TTL_SECONDS}"
         return body + "." + b64(sign(body))
     }
 
@@ -115,7 +114,7 @@ class SignInService(
         if (!constantTimeEquals(sign(parts[0] + "." + parts[1]), signature)) return null
         return try {
             val claims = Json.parseToJsonElement(String(Base64.getUrlDecoder().decode(parts[1]))).jsonObject
-            claims.getValue("sub").jsonPrimitive.content.takeIf { claims.getValue("exp").jsonPrimitive.long > clock() }
+            claims.getValue("sub").jsonPrimitive.content.takeIf { claims.getValue("exp").jsonPrimitive.long > epochSeconds() }
         } catch (_: Exception) {
             null
         }
@@ -126,6 +125,8 @@ class SignInService(
             init(key)
             doFinal(message.toByteArray())
         }
+
+    private fun epochSeconds(): Long = System.currentTimeMillis() / 1000
 
     private fun randomId(): String = ByteArray(16).also(random::nextBytes).joinToString("") { "%02x".format(it) }
 

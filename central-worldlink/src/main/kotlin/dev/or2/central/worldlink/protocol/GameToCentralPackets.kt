@@ -21,6 +21,12 @@ object GameToCentralPackets {
             }
         }
 
+    fun tokenLogin(username: String, loginCharacterId: Int?): ByteArray =
+        outboundFrame(WorldOpcodes.OP_TOKEN_LOGIN) {
+            writeUtf8LenPrefixed(username)
+            loginCharacterId?.takeIf { it > 0 }?.let { writeInt(it) }
+        }
+
     fun logout(sessionToken: ByteArray): ByteArray =
         outboundFrame(WorldOpcodes.OP_LOGOUT) {
             require(sessionToken.size == WorldOpcodes.TOKEN_BYTES)

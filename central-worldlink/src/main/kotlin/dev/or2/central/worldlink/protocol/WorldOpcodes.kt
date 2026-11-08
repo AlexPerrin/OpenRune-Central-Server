@@ -14,6 +14,7 @@ object WorldOpcodes {
 
     const val OP_PUSH_SUBSCRIBE: Int = 19
     const val OP_PUSH_SUBSCRIBE_ACK: Int = 20
+    const val OP_TOKEN_LOGIN: Int = 21
 
     const val OP_HEARTBEAT: Int = 48
     const val OP_HEARTBEAT_ACK: Int = 49
@@ -56,9 +57,9 @@ object WorldOpcodes {
     const val OP_WORLD_SOCIAL_SYNC_FAIL: Int = 107
     const val OP_SERVER_FRIEND_PRESENCE: Int = 108
 
-    const val PROTOCOL_VERSION: Int = 8
+    const val PROTOCOL_VERSION: Int = 9
     const val MIN_CLIENT_PROTOCOL_VERSION: Int = 2
-    const val MAX_CLIENT_PROTOCOL_VERSION: Int = 8
+    const val MAX_CLIENT_PROTOCOL_VERSION: Int = 9
 
     const val LOGIN_OK_RIGHTS_MAX_BYTES: Int = 4096
     const val LOGIN_FAIL_SCRIPT_LINE_MAX_UTF8_BYTES: Int = 512

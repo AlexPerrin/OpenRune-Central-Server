@@ -26,6 +26,8 @@ import dev.or2.central.http.JavConfigCache
 import dev.or2.central.http.WorldKeyVerifier
 import dev.or2.central.http.WorldListCache
 import dev.or2.central.http.centralHttpRoutes
+import dev.or2.central.http.signInRoutes
+import dev.or2.central.signin.SignInService
 import dev.or2.central.notify.NotifyBroadcaster
 import dev.or2.central.notify.PgNotifyDiscovery
 import dev.or2.central.notify.PgNotifyRegistrar
@@ -101,7 +103,11 @@ object CentralApplication {
         val javConfigCache = koin.get<JavConfigCache>()
 
         application.routing {
-            centralHttpRoutes(worldListCache, javConfigCache)
+            val signInEnabled = config.signIn.tokenSecret.isNotBlank()
+            centralHttpRoutes(worldListCache, javConfigCache, signInEnabled)
+            if (signInEnabled) {
+                signInRoutes(koin.get())
+            }
         }
 
         val shutdownOnce = AtomicBoolean(false)
@@ -183,6 +189,7 @@ object CentralApplication {
             single { CentralActivityLogRepository(get()) }
             single<CentralActivityLogPublisher> { DefaultCentralActivityLogPublisher(get()) }
             single { WorldKeyVerifier() }
+            single { SignInService(config.signIn, get(), get()) }
             single { WorldListCache(get()) }
             single { JavConfigCache(config) }
             single { WorldConnectionRegistry() }

@@ -21,6 +21,7 @@ data class CentralConfig(
     val badWords: BadWordsConfig = BadWordsConfig(),
     val devWorld: DevWorldConfig = DevWorldConfig(),
     val diagnostics: DiagnosticsConfig = DiagnosticsConfig(),
+    val signIn: SignInConfig = SignInConfig(),
 ) {
     fun resolvedJdbcUrl(): String {
         if (!jdbc?.url.isNullOrBlank()) return jdbc!!.url
@@ -60,6 +61,12 @@ data class CentralConfig(
 
             return builder.build().loadConfigOrThrow<CentralConfigRoot>().openrune
         }
+
+        inline fun <reified T : Any> fromEnvironment(): T =
+            ConfigLoaderBuilder.default()
+                .addEnvironmentSource(useUnderscoresAsSeparator = false)
+                .build()
+                .loadConfigOrThrow<T>()
     }
 }
 
@@ -109,6 +116,23 @@ data class HttpConfig(
     val port: Int = 8080,
     @ConfigAlias("OPENRUNE_HTTP_TRUST_PROXY")
     val trustProxy: Boolean = false,
+    val tls: TlsConfig = TlsConfig(),
+)
+
+data class TlsConfig(
+    @ConfigAlias("OPENRUNE_HTTP_TLS_PORT")
+    val port: Int = 0,
+    @ConfigAlias("OPENRUNE_HTTP_TLS_KEYSTORE")
+    val keystore: String = "",
+    @ConfigAlias("OPENRUNE_HTTP_TLS_KEYSTORE_PASSWORD")
+    val keystorePassword: String = "",
+)
+
+data class SignInConfig(
+    @ConfigAlias("OPENRUNE_SIGN_IN_TOKEN_SECRET")
+    val tokenSecret: String = "",
+    @ConfigAlias("OPENRUNE_SIGN_IN_DEV_ACCOUNT")
+    val devAccount: String = "",
 )
 
 data class WorldLinkConfig(

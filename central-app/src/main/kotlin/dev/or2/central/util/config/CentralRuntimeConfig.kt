@@ -8,6 +8,8 @@ import dev.or2.central.config.HttpConfig
 import dev.or2.central.config.JavConfigSettings
 import dev.or2.central.config.JdbcConfig
 import dev.or2.central.config.SessionConfig
+import dev.or2.central.config.SignInConfig
+import dev.or2.central.config.TlsConfig
 import dev.or2.central.config.WorldLinkConfig
 
 /** Builds [CentralConfig] for embedded Central inside the game server process. */
@@ -37,6 +39,8 @@ fun centralRuntimeConfigFromJdbc(
     devWorldAutoCreate: Boolean = true,
     loginTimingLogs: Boolean = false,
     socialPmTraceLogs: Boolean = false,
+    httpTls: TlsConfig = CentralConfig.fromEnvironment(),
+    signIn: SignInConfig = CentralConfig.fromEnvironment(),
 ): CentralConfig {
     require(jdbcUrl.isNotBlank()) { "jdbcUrl is required" }
     require(dbUser.isNotBlank()) { "dbUser is required" }
@@ -52,7 +56,7 @@ fun centralRuntimeConfigFromJdbc(
                 poolSize = dbMaximumPoolSize.coerceIn(1, 100),
             ),
         jdbc = JdbcConfig(url = jdbcUrl.trim(), user = dbUser.trim(), password = dbPassword),
-        http = HttpConfig(port = httpPort.coerceIn(1, 65535), trustProxy = httpTrustProxy),
+        http = HttpConfig(port = httpPort.coerceIn(1, 65535), trustProxy = httpTrustProxy, tls = httpTls),
         worldLink =
             WorldLinkConfig(
                 port = worldLinkPort.coerceIn(1, 65535),
@@ -80,5 +84,6 @@ fun centralRuntimeConfigFromJdbc(
                 loginTimingLogs = loginTimingLogs,
                 socialPmTraceLogs = socialPmTraceLogs,
             ),
+        signIn = signIn,
     )
 }

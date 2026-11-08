@@ -24,6 +24,11 @@ openrune:
   http:
     port: 8080
     trustProxy: false
+    # HTTPS beside http.port (the desktop client reaches jav_config params 11 and 22 over https only).
+    # tls:
+    #   port: 8443
+    #   keystore: central-tls.p12   # PKCS12 with one key entry
+    #   keystorePassword: changeit
 
   worldLink:
     port: 9091
@@ -47,6 +52,14 @@ openrune:
       title: OpenRune Central  # client window title; serverName drives realm login message
       # param/msg entries keep their index in the key, so each one replaces its own remote line
       param=17: http://127.0.0.1:8080/worldslist.ws
+
+  # Client sign-in (OIDC + game-session): on when tokenSecret is set; jav_config params 11, 20, 22 and 28 then
+  # name this Central. tokenSecret is the base64 HMAC key the game server's token-login.secret holds.
+  # devAccount signs every sign-in in as that account without a password form.
+  # signIn:
+  #   tokenSecret: ""
+  #   devAccount: ""
+  # Or env: OPENRUNE_SIGN_IN_TOKEN_SECRET / OPENRUNE_SIGN_IN_DEV_ACCOUNT (also read by embedded Central)
 
   # Inserts development realm/world (id 255) on startup when true (default).
   devWorld:

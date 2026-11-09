@@ -277,7 +277,6 @@ class SocialService(
                 persistence.enqueueFriendDelete(characterId, targetCharacterId)
                 val after = graph.visiblePresenceRecipients(characterId, friendWorld, onlineIndex)
                 sendPresenceVisibilityChanges(before, after)
-                pushFriendOfflineToOwner(characterId, targetCharacterId)
                 SocialReply.Ok(SocialPackets.encodeSocialOk())
             }
             SocialNameAction.IgnoreAdd -> {
@@ -374,24 +373,6 @@ class SocialService(
                 friendDisplayName = profile.displayName,
                 friendPreviousDisplayName = profile.previousDisplayName,
                 visibleWorldId = visible,
-            ),
-        )
-    }
-
-    private fun pushFriendOfflineToOwner(
-        ownerCharacterId: Int,
-        friendCharacterId: Int,
-    ) {
-        val ownerWorld = onlineIndex.worldFor(ownerCharacterId) ?: return
-        val profile = graph.profile(friendCharacterId) ?: return
-        sendFriendPresence(
-            FriendPresenceRecipient(
-                ownerCharacterId = ownerCharacterId,
-                ownerWorldId = ownerWorld,
-                friendCharacterId = friendCharacterId,
-                friendDisplayName = profile.displayName,
-                friendPreviousDisplayName = profile.previousDisplayName,
-                visibleWorldId = 0,
             ),
         )
     }

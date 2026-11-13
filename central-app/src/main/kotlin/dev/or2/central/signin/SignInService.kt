@@ -143,7 +143,7 @@ class SignInService(
 
     private fun epochSeconds(): Long = System.currentTimeMillis() / 1000
 
-    private fun randomId(): String = ByteArray(16).also(random::nextBytes).joinToString("") { "%02x".format(it) }
+    private fun randomId(): String = b64(ByteArray(16).also(random::nextBytes))
 
     companion object {
         private const val CODE_TTL_SECONDS = 600L

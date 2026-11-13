@@ -62,6 +62,8 @@ class SignInServiceTest {
         val idToken = signIn.idToken("http://127.0.0.1:8080/", "client", SignedIn("tester", "n1"))
         val session = assertNotNull(signIn.openSession(idToken))
         assertEquals("tester", signIn.sessionAccount(session))
+        assertEquals(16, Base64.getUrlDecoder().decode(session).size)
+        assertTrue(signIn.mintLoginToken("abcdefghijkl").length + session.length <= 92)
         assertNull(signIn.sessionAccount("unknown"))
 
         val forged = service(Base64.getEncoder().encodeToString(ByteArray(32))).idToken("x", "client", SignedIn("tester", null))
